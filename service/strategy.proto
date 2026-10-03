@@ -1,0 +1,74 @@
+// Strategy service: live ranking, the market gate,
+// and streamed backtests for the human (rule) and
+// ML strategies. Generate Python code with
+//   make proto
+syntax = "proto3";
+
+package mlrank;
+
+service StrategyService {
+  // Stocks or gold at the latest close.
+  rpc GetGate (GateRequest) returns (GateResponse);
+  // Top N stocks for the next trade.
+  rpc GetRanking (RankingRequest) returns (RankingResponse);
+  // Month-by-month equity, then the summary.
+  rpc RunBacktest (BacktestRequest) returns (stream BacktestUpdate);
+}
+
+message GateRequest {}
+
+message GateResponse {
+  string date = 1;          // decision close, YYYY-MM-DD
+  bool gate_on = 2;         // true = hold stocks, false = GOLDBEES
+  bool index_ok = 3;        // NIFTY 50 > SMA100
+  double breadth = 4;       // share of members above their SMA200
+  bool breadth_ok = 5;      // breadth >= 60%
+}
+
+message RankingRequest {
+  string strategy = 1;      // c3 | mom12_vol | low_vol | lgbm_reg
+  int32 top_n = 2;          // 0 = the configured top N (20)
+}
+
+message RankedStock {
+  int32 rank = 1;
+  string symbol = 2;
+  double score = 3;
+}
+
+message RankingResponse {
+  string strategy = 1;
+  string decision_date = 2;
+  string trade_date = 3;
+  bool gate_on = 4;         // false: ranking is reference only
+  repeated RankedStock stocks = 5;
+}
+
+message BacktestRequest {
+  string strategy = 1;
+  string start = 2;         // optional YYYY-MM-DD
+  string end = 3;           // optional YYYY-MM-DD
+}
+
+message MonthPoint {
+  string date = 1;          // rebalance date
+  double equity = 2;        // growth of 1.0
+  bool in_gold = 3;
+  int32 holdings = 4;
+}
+
+message BacktestSummary {
+  double cagr = 1;
+  double max_drawdown = 2;
+  double sharpe = 3;
+  double turnover = 4;      // traded value / avg equity per year
+  string start = 5;
+  string end = 6;
+}
+
+message BacktestUpdate {
+  oneof update {
+    MonthPoint month = 1;
+    BacktestSummary summary = 2;
+  }
+}
