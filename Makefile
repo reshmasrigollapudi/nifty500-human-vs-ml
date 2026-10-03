@@ -10,11 +10,10 @@ membership:                   # needs ../indian_stocks_monitor data
 test:
 	$(PY) tests/run_all.py
 
-all:
+all:                          # panel -> ML walk-forward -> comparison -> SHAP
 	$(PY) scripts/build_panel.py $(FLAG)
 	$(PY) scripts/run_experiment.py $(FLAG)
 	$(PY) scripts/run_backtest.py $(FLAG)
-	$(PY) scripts/run_regime.py $(FLAG)
 	$(PY) scripts/run_explain.py $(FLAG) --model lgbm_reg
 
 live:                         # this month's C3 top 20 + gate

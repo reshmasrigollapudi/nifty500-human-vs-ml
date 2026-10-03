@@ -1,9 +1,8 @@
 import numpy as np
-from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.linear_model import Ridge
 
 from mlrank.models.ridge_scratch import RidgeScratch
 from mlrank.models.tree_scratch import GradientBoostingScratch, RegressionTreeScratch
-from mlrank.regime import LogisticScratch
 
 
 def _reg_data(n=4000, p=6, seed=0):
@@ -26,16 +25,6 @@ def test_ridge_gd_matches_closed():
     a = RidgeScratch(alpha=5.0).fit(X, y)
     b = RidgeScratch(alpha=5.0, method="gd", lr=0.2, epochs=5000, tol=1e-14).fit(X, y)
     np.testing.assert_allclose(a.coef_, b.coef_, atol=1e-5)
-
-
-def test_logistic_matches_sklearn():
-    rng = np.random.default_rng(1)
-    X = rng.normal(size=(3000, 4))
-    y = (X @ [1.0, -2.0, 0.5, 0.0] + rng.normal(size=3000) > 0).astype(float)
-    X = (X - X.mean(0)) / X.std(0)
-    m = LogisticScratch(alpha=2.0, lr=1.0, epochs=20000, tol=1e-14).fit(X, y)
-    ref = LogisticRegression(C=0.5, tol=1e-10, max_iter=10000).fit(X, y)
-    np.testing.assert_allclose(m.predict_proba(X), ref.predict_proba(X)[:, 1], atol=1e-4)
 
 
 def test_tree_and_gbm_learn_nonlinear():
